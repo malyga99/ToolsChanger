@@ -1,0 +1,149 @@
+networks:
+  toolsnet:
+    driver: bridge
+
+volumes:
+  pgdata:
+  appdata:
+  redisdata:
+  miniodata:
+  esdata:
+
+services:
+  db:
+    networks:
+      - toolsnet
+    image: postgres:latest
+    container_name: toolspostgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: always
+
+  redis:
+    networks:
+      - toolsnet
+    image: redis/redis-stack:latest
+    container_name: toolsredis
+    volumes:
+      - redisdata:/data
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: always
+
+  minio:
+    networks:
+      - toolsnet
+    image: minio/minio:latest
+    container_name: toolsminio
+    volumes:
+      - miniodata:/data
+    environment:
+      - MINIO_ROOT_USER=${MINIO_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: always
+
+  elastic:
+    networks:
+      - toolsnet
+    image: elasticsearch:8.17.2
+    container_name: toolselastic
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - xpack.security.enabled=true
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsSL -u ${ELASTIC_USER}:${ELASTIC_PASSWORD} http://localhost:9200/_cluster/health | grep -E '\"status\":\"(green|yellow)\"'" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: always
+
+  app:
+    networks:
+      - toolsnet
+    build:
+      context: .
+    env_file:
+      - .env
+    container_name: toolsapp
+    volumes:
+      - appdata:/app/data
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      elastic:
+        condition: service_healthy
+    restart: always
+
+  nginx:
+    networks:
+      - toolsnet
+    image: nginx:latest
+    container_name: toolsnginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:80" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "80:80"
+    depends_on:
+      minio:
+        condition: service_healthy
+      app:
+        condition: service_healthy
+    restart: always
+
+

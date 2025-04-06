@@ -1,0 +1,104 @@
+{
+  "settings": {
+    "analysis": {
+      "tokenizer": {
+        "edge_ngram_tokenizer": {
+          "type": "edge_ngram",
+          "min_gram": 3,
+          "max_gram": 15,
+          "token_chars": ["letter"]
+        }
+      },
+      "filter": {
+        "search_synonym": {
+          "type": "synonym",
+          "synonyms": [
+            "bosch, бош",
+            "makita, макита, мокита, макито",
+            "dewalt, девольт, девальт, девалт",
+            "metabo, метабо",
+            "milwaukee, милуоки",
+            "ryobi, рёби, риоби",
+            "aeg, аег",
+            "hitachi, hikoki, хитачи, хикоки",
+            "stanley, стенли",
+            "black+decker, black and decker, блэкдекер",
+            "интерскол, interskol",
+            "зубр, zubr",
+            "ресанта, resanta",
+            "калибр, kalibr",
+            "dremel, дремель",
+            "hilti, хилти",
+            "festool, фестул",
+            "einhell, айнхель",
+            "sturm, штурм",
+            "patriot, патриот",
+            "молоток, hammer",
+            "дрель, drill",
+            "шуруповерт, screwdriver",
+            "перфоратор, perforator",
+            "лобзик, jigsaw",
+            "болгарка, ушм, grinder",
+            "рубанок, planer",
+            "фрезер, router",
+            "пила циркулярная, circular saw",
+            "лазерный уровень, laser level",
+            "компрессор, compressor",
+            "гвоздезабивной пистолет, nail gun",
+            "отвертка аккумуляторная, electric screwdriver",
+            "точило, grinder",
+            "газовый паяльник, gas soldering iron",
+            "сварочный аппарат, welding machine",
+            "степлер строительный, construction stapler",
+            "клеевой пистолет, glue gun",
+            "электрический рубанок, electric planer",
+            "миксер строительный, construction mixer"
+          ]
+        },
+        "ru_stopwords": {
+          "type": "stop",
+          "stopwords": "_russian_"
+        }
+      },
+      "analyzer": {
+        "description_analyzer": {
+          "type": "custom",
+          "tokenizer": "edge_ngram_tokenizer",
+          "filter": [
+            "lowercase",
+            "search_synonym",
+            "ru_stopwords"
+          ]
+        }
+      }
+    }
+  },
+
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "description_analyzer"
+      },
+      "manufacturer": {
+        "type": "long"
+      },
+      "category": {
+        "type": "long"
+      },
+      "type": {
+        "type": "keyword"
+      },
+      "condition": {
+        "type": "keyword"
+      },
+      "price": {
+        "type": "scaled_float",
+        "scaling_factor": 100
+      }
+    }
+  }
+}
