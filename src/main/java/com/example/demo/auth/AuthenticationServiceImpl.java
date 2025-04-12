@@ -20,7 +20,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public AuthenticationResponse authenticate(AuthenticationRequest authenticationRequest) {
-        long startTime = System.currentTimeMillis();
         LOGGER.info("Starting user authentication with login: {}", authenticationRequest.getLogin());
 
         Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
@@ -31,8 +30,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         User user = (User) auth.getPrincipal();
 
         String token = jwtService.generateToken(user);
-        long elapsedTime = System.currentTimeMillis() - startTime;
-        LOGGER.info("Successful user authentication with login: {}. Time taken: {} ms", authenticationRequest.getLogin(), elapsedTime);
+        LOGGER.info("Successful user authentication with login: {}", authenticationRequest.getLogin());
 
         return AuthenticationResponse.builder()
                 .token(token)

@@ -24,7 +24,6 @@ public class RegisterServiceImpl implements RegisterService {
     @Override
     @Transactional
     public RegisterResponse register(RegisterRequest registerRequest) {
-        long startTime = System.currentTimeMillis();
         registerRequest.setLogin(registerRequest.getLogin().toLowerCase());
         LOGGER.info("Starting user register with login: {}", registerRequest.getLogin());
 
@@ -36,8 +35,7 @@ public class RegisterServiceImpl implements RegisterService {
         userRepository.save(user);
 
         String token = jwtService.generateToken(user);
-        long elapsedTime = System.currentTimeMillis() - startTime;
-        LOGGER.info("Successful user register with login: {}. Time taken: {} ms", registerRequest.getLogin(), elapsedTime);
+        LOGGER.info("Successful user register with login: {}", registerRequest.getLogin());
 
         return RegisterResponse.builder()
                 .token(token)
